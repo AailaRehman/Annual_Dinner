@@ -40,10 +40,9 @@
   <h1>QR Code Verifier</h1>
   <div id="reader"></div>
   <div id="result">Loading QR data...</div>
-
+  <button onclick="downloadScannedCodes()">Download Scanned QR Codes</button>
   <script>
     let validCodes = {};
-    let usedCodes = new Set(JSON.parse(localStorage.getItem("usedCodes") || "[]"));
     const resultDiv = document.getElementById("result");
     let scanning = false;
 
@@ -72,34 +71,49 @@
         resultDiv.className = "invalid";
       });
 
-    function handleQRCode(qrCode) {
-      if (scanning) return; // Prevent duplicate scans
-      scanning = true;
+  let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "{}");
 
-      qrCode = qrCode.trim().toUpperCase();
-      console.log("🔍 Scanned:", qrCode);
+function handleQRCode(qrCode) {
+  if (scanning) return;
+  scanning = true;
+  qrCode = qrCode.trim().toUpperCase();
 
-      if (usedCodes.has(qrCode)) {
-        resultDiv.innerHTML = `⛔ Already Used!`;
-        resultDiv.className = "invalid";
-      } else if (validCodes[qrCode]) {
-        const person = validCodes[qrCode];
-        resultDiv.innerHTML = `✅ Valid Ticket!<br>Name: ${person.name}<br>Roll: ${person.roll}`;
-        resultDiv.className = "valid";
-        usedCodes.add(qrCode);
-        localStorage.setItem("usedCodes", JSON.stringify([...usedCodes]));
-      } else {
-        resultDiv.innerHTML = `❌ Invalid QR Code: ${qrCode}`;
-        resultDiv.className = "invalid";
-      }
+  if (usedCodes[qrCode]) {
+    resultDiv.innerHTML = `⛔ Already Used!`;
+    resultDiv.className = "invalid";
+  } else if (validCodes[qrCode]) {
+    const person = validCodes[qrCode];
+    resultDiv.innerHTML = `✅ Valid Ticket!<br>Name: ${person.name}<br>Roll: ${person.roll}`;
+    resultDiv.className = "valid";
+    usedCodes[qrCode] = {
+      name: person.name,
+      roll: person.roll,
+      scannedAt: new Date().toISOString()
+    };
+    localStorage.setItem("usedCodes", JSON.stringify(usedCodes));
+  } else {
+    resultDiv.innerHTML = `❌ Invalid QR Code: ${qrCode}`;
+    resultDiv.className = "invalid";
+  }
 
-      // Reset after 3 seconds
-      setTimeout(() => {
-        resultDiv.innerHTML = "Ready for next scan!";
-        resultDiv.className = "";
-        scanning = false;
-      }, 3000);
-    }
+  setTimeout(() => {
+    resultDiv.innerHTML = "Ready for next scan!";
+    resultDiv.className = "";
+    scanning = false;
+  }, 3000);
+}
+
+function downloadScannedCodes() {
+  const blob = new Blob([JSON.stringify(usedCodes, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "scanned_qr_codes.json";
+  a.click();
+}
+
 
     const qrScanner = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: 250 };
