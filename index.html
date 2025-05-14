@@ -40,7 +40,8 @@
   <h1>QR Code Verifier</h1>
   <div id="reader"></div>
   <div id="result">Loading QR data...</div>
-  <button onclick="downloadScannedCodes()">Download Scanned QR Codes</button>
+  <button onclick="downloadScannedData()">Download Scanned QR Data</button>
+
   <script>
   let validCodes = {};
   let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "[]");
@@ -90,8 +91,7 @@ function handleQRCode(qrCode) {
     usedCodes.push({
       code: qrCode,
       name: person.name,
-      roll: person.roll,
-      scannedAt: new Date().toISOString()
+      roll: person.roll
     });
 
     localStorage.setItem("usedCodes", JSON.stringify(usedCodes));
@@ -118,7 +118,6 @@ function downloadScannedData() {
   a.download = "scanned_qr_codes.json";
   a.click();
 }
-
 
     const qrScanner = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: 250 };
