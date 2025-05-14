@@ -42,9 +42,10 @@
   <div id="result">Loading QR data...</div>
   <button onclick="downloadScannedCodes()">Download Scanned QR Codes</button>
   <script>
-    let validCodes = {};
-    const resultDiv = document.getElementById("result");
-    let scanning = false;
+  let validCodes = {};
+  let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "[]");
+  const resultDiv = document.getElementById("result");
+  let scanning = false;
 
     // Try loading from localStorage cache first
     try {
@@ -71,25 +72,28 @@
         resultDiv.className = "invalid";
       });
 
-  let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "{}");
-
 function handleQRCode(qrCode) {
   if (scanning) return;
   scanning = true;
-  qrCode = qrCode.trim().toUpperCase();
 
-  if (usedCodes[qrCode]) {
+  qrCode = qrCode.trim().toUpperCase();
+  console.log("🔍 Scanned:", qrCode);
+
+  if (usedCodes.find(entry => entry.code === qrCode)) {
     resultDiv.innerHTML = `⛔ Already Used!`;
     resultDiv.className = "invalid";
   } else if (validCodes[qrCode]) {
     const person = validCodes[qrCode];
     resultDiv.innerHTML = `✅ Valid Ticket!<br>Name: ${person.name}<br>Roll: ${person.roll}`;
     resultDiv.className = "valid";
-    usedCodes[qrCode] = {
+
+    usedCodes.push({
+      code: qrCode,
       name: person.name,
       roll: person.roll,
       scannedAt: new Date().toISOString()
-    };
+    });
+
     localStorage.setItem("usedCodes", JSON.stringify(usedCodes));
   } else {
     resultDiv.innerHTML = `❌ Invalid QR Code: ${qrCode}`;
@@ -103,9 +107,10 @@ function handleQRCode(qrCode) {
   }, 3000);
 }
 
-function downloadScannedCodes() {
+
+function downloadScannedData() {
   const blob = new Blob([JSON.stringify(usedCodes, null, 2)], {
-    type: "application/json",
+    type: "application/json"
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
