@@ -40,8 +40,8 @@
   <h1>QR Code Verifier</h1>
   <div id="reader"></div>
   <div id="result">Loading QR data...</div>
-  <button onclick="downloadScannedData()">Download Scanned QR Data</button>
-
+  <button onclick="downloadCSV()">Download Scanned QR Data (CSV)</button>
+  <button onclick="clearHistory()">Clear Scanned History</button>
   <script>
   let validCodes = {};
   let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "[]");
@@ -108,31 +108,31 @@ function handleQRCode(qrCode) {
 }
 
 
-function downloadScannedData() {
-  const blob = new Blob([JSON.stringify(usedCodes, null, 2)], {
-    type: "application/json"
+function downloadCSV() {
+  if (usedCodes.length === 0) {
+    alert("No scanned data to download.");
+    return;
+  }
+
+  let csv = "QR Code,Name,Roll No\n";
+  usedCodes.forEach(entry => {
+    csv += `${entry.code},${entry.name},${entry.roll}\n`;
   });
+
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "scanned_qr_codes.json";
+  a.download = "scanned_qr_codes.csv";
   a.click();
 }
-
-    const qrScanner = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: 250 };
-
-    qrScanner.start(
-      { facingMode: "environment" },
-      config,
-      qrCodeMessage => handleQRCode(qrCodeMessage),
-      error => {
-        // You can log scan errors here if needed
-      }
-    ).catch(err => {
-      resultDiv.innerHTML = `Camera Error: ${err}`;
-      resultDiv.className = "invalid";
-    });
+function clearHistory() {
+  if (confirm("Are you sure you want to clear all scanned data?")) {
+    localStorage.removeItem("usedCodes");
+    usedCodes = [];
+    alert("Scanned data cleared.");
+  }
+}
   </script>
 </body>
 </html>
