@@ -43,35 +43,35 @@
   <button onclick="downloadCSV()">Download Scanned QR Data (CSV)</button>
   <button onclick="clearHistory()">Clear Scanned History</button>
   <script>
-  let validCodes = {};
-  let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "[]");
-  const resultDiv = document.getElementById("result");
-  let scanning = false;
+let validCodes = {};
+let usedCodes = JSON.parse(localStorage.getItem("usedCodes") || "[]");
+const resultDiv = document.getElementById("result");
+let scanning = false;
 
-    // Try loading from localStorage cache first
-    try {
-      const cachedData = localStorage.getItem("qrCodeCache");
-      if (cachedData) {
-        validCodes = JSON.parse(cachedData);
-        resultDiv.innerHTML = "✅ Cached QR codes loaded. Ready to scan!";
-      }
-    } catch (e) {
-      console.warn("⚠️ Failed to parse cached QR code data");
-    }
+// Try loading from localStorage cache first
+try {
+  const cachedData = localStorage.getItem("qrCodeCache");
+  if (cachedData) {
+    validCodes = JSON.parse(cachedData);
+    resultDiv.innerHTML = "✅ Cached QR codes loaded. Ready to scan!";
+  }
+} catch (e) {
+  console.warn("⚠️ Failed to parse cached QR code data");
+}
 
-    // Try updating from server (if possible)
-    fetch('qr_codes.json')
-      .then(response => response.json())
-      .then(data => {
-        validCodes = data;
-        localStorage.setItem("qrCodeCache", JSON.stringify(data));
-        resultDiv.innerHTML = "✅ QR codes loaded from server. Ready to scan!";
-      })
-      .catch(error => {
-        console.error("❌ Failed to update QR codes from server:", error);
-        resultDiv.innerHTML += "<br>⚠️ Using cached data (Offline Mode)";
-        resultDiv.className = "invalid";
-      });
+// Try updating from server (if possible)
+fetch('qr_codes.json')
+  .then(response => response.json())
+  .then(data => {
+    validCodes = data;
+    localStorage.setItem("qrCodeCache", JSON.stringify(data));
+    resultDiv.innerHTML = "✅ QR codes loaded from server. Ready to scan!";
+  })
+  .catch(error => {
+    console.error("❌ Failed to update QR codes from server:", error);
+    resultDiv.innerHTML += "<br>⚠️ Using cached data (Offline Mode)";
+    resultDiv.className = "invalid";
+  });
 
 function handleQRCode(qrCode) {
   if (scanning) return;
@@ -107,7 +107,6 @@ function handleQRCode(qrCode) {
   }, 3000);
 }
 
-
 function downloadCSV() {
   if (usedCodes.length === 0) {
     alert("No scanned data to download.");
@@ -126,6 +125,7 @@ function downloadCSV() {
   a.download = "scanned_qr_codes.csv";
   a.click();
 }
+
 function clearHistory() {
   if (confirm("Are you sure you want to clear all scanned data?")) {
     localStorage.removeItem("usedCodes");
@@ -133,6 +133,25 @@ function clearHistory() {
     alert("Scanned data cleared.");
   }
 }
-  </script>
+
+// ✅ Start the scanner
+const html5QrCode = new Html5Qrcode("reader");
+const config = { fps: 10, qrbox: 250 };
+
+html5QrCode.start(
+  { facingMode: "environment" },
+  config,
+  qrCodeMessage => {
+    handleQRCode(qrCodeMessage);
+  },
+  errorMessage => {
+    console.warn(`QR Code scan error: ${errorMessage}`);
+  }
+).catch(err => {
+  resultDiv.innerHTML = `❌ Unable to start camera: ${err}`;
+  resultDiv.className = "invalid";
+});
+</script>
+
 </body>
 </html>
